@@ -1,4 +1,4 @@
-from django.test import TestCase, Client
+from django.test import TestCase
 
 
 class TestCastomPage(TestCase):
@@ -7,4 +7,3 @@ class TestCastomPage(TestCase):
     def test_404_custom(self):
         response = self.client.get('/random/')
         self.assertTemplateUsed(response, 'core/404.html')
-
