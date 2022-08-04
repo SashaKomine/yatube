@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block header %}
+  {{ title }}
+{% endblock %}
+{% load cache %}
+{% cache 20 index_page with page %}
+  {% block h1 %}
+    {{ title }}
+  {% endblock %}
+  {% block content %}
+    {% for post in page_obj %}
+      {% block content_sample %}
+        {% include 'includes/content_sample.html' %}
+      {% endblock %}
+      {% if post.group %}
+        <a href="{% url 'posts:group_list' post.group.slug %}">все записи группы</a>
+      {% endif %}
+      <br>  
+      <a href="{% url 'posts:post_detail' post.id %}">Подробнее</a>
+      {% if not forloop.last %}<hr>{% endif %}
+      {% endfor %} 
+      {% include 'posts/includes/paginator.html'%}
+  {% endblock %}
+{% endcache %}
+  
