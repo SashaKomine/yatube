@@ -4,9 +4,10 @@ from django.urls import reverse
 from django.core.files import File
 from django.core.cache import cache
 
+from posts.utils import COUNT_POST
 from posts.forms import PostForm
 from posts.models import Post, Group, Follow
-from posts.views import COUNT_POST
+
 
 User = get_user_model()
 
@@ -30,6 +31,7 @@ class TestNameNamespace(TestCase):
     def setUp(self):
         self.author_auth = Client()
         self.author_auth.force_login(self.user)
+        cache.clear()
 
     def test_name_and_namespace(self):
         """ во view-функциях используются
@@ -77,6 +79,7 @@ class TestPagination(TestCase):
     def setUp(self):
         self.auth_user = Client()
         self.auth_user.force_login(self.user)
+        cache.clear()
 
     def test_1_page(self):
         """1-я страница пагинации"""
@@ -132,6 +135,7 @@ class TestContext(TestCase):
     def setUp(self):
         self.auth_user = Client()
         self.auth_user.force_login(self.user)
+        cache.clear()
 
     def sample_context(self, obj):
         self.assertEqual(obj.text, self.post.text)
@@ -245,14 +249,19 @@ class TestCache(TestCase):
             text='test post 1',
             image=File('1.png'))
 
+    def setUp(self):
+        cache.clear()
+
     def test_index_cache(self):
-        """Кеш сохраняется"""
+        """Кеш сохраняется и через 20 секунд удаляется"""
         response = self.client.get(reverse('posts:index'))
-        post1 = Post.objects.get(id=1)
+        post1 = Post.objects.last()
         post1.delete()
-        response_new = self.client.get(reverse('posts:index'))
-        self.assertNotEqual(
-            response.content, response_new.content)
+        self.assertEqual(
+            response.context['page_obj'][0].text, post1.text)
+        cache.clear()
+        response = self.client.get(reverse('posts:index'))
+        self.assertIsNone(Post.objects.last())
 
 
 class TestFollow(TestCase):
@@ -279,13 +288,12 @@ class TestFollow(TestCase):
         self.auth_user.force_login(self.user1)
         cache.clear()
 
-    def test_un_anf_following(self):
+    def test_following(self):
         """Авторизованный пользователь может подписываться на других
         пользователей """
-        follow_count = Follow.objects.count()
         self.auth_user.get(
             reverse('posts:profile_follow', args=[self.user.username]))
-        self.assertEqual(Follow.objects.count(), follow_count + 1)
+        self.assertIsNotNone(Follow.objects.filter(author=self.user,user=self.user1))
 
     def test_unfollowing(self):
         """Авторизованный пользователь может удалять из подписок."""

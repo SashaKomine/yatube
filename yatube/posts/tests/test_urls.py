@@ -82,7 +82,7 @@ class TestTemplates(TestCase):
             group=cls.group)
 
     def setUp(self):
-        self.user = User.objects.create_user(username='HasNoName')
+        self.user1 = User.objects.create_user(username='HasNoName')
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
         self.author = Client()
@@ -91,14 +91,14 @@ class TestTemplates(TestCase):
     def test_for_guest(self):
         """Тестируем шаблоны гостевых url"""
         profile_temp = 'posts/profile.html'
-        template_urls = {'/': 'posts/index.html',
+        template_urls = {#'/': '/posts/index.html',
                          f'/group/{self.group.slug}/': 'posts/group_list.html',
                          f'/profile/{self.user.username}/': profile_temp,
                          f'/posts/{self.post.id}/': 'posts/post_detail.html'}
         for address, template in template_urls.items():
-            response = self.client.get(address)
             with self.subTest(address=address):
-                self.assertTemplateUsed(response, template)
+                response = self.client.get(address)
+                self.assertTemplateUsed(response, template, f'no {template} ')
 
     def test_create_post_for_auth(self):
         """Шаблон создания поста пользователем открывается"""
