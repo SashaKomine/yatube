@@ -293,15 +293,16 @@ class TestFollow(TestCase):
         пользователей """
         self.auth_user.get(
             reverse('posts:profile_follow', args=[self.user.username]))
-        self.assertIsNotNone(Follow.objects.filter(author=self.user,user=self.user1))
+        self.assertIsNotNone(Follow.objects.filter(
+            author=self.user, user=self.user1))
 
     def test_unfollowing(self):
         """Авторизованный пользователь может удалять из подписок."""
-        follow_count = Follow.objects.count()
         Follow.objects.create(user=self.user1, author=self.user)
         self.auth_user.get(
             reverse('posts:profile_unfollow', args=[self.user.username]))
-        self.assertEqual(Follow.objects.count(), follow_count)
+        self.assertFalse(Follow.objects.filter(
+            author=self.user, user=self.user1).exists())
 
     def test_follow_list(self):
         """Новая запись пользователя появляется в ленте тех,
