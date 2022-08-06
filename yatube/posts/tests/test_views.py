@@ -300,8 +300,6 @@ class TestFollow(TestCase):
 
     def test_self_following(self):
         """Подписка на самого себя"""
-        count_author_following = Follow.objects.filter(
-            author=self.user).count()
         self.author.get(
             reverse('posts:profile_follow', args=[self.user.username]))
         self.assertFalse(Follow.objects.filter(
