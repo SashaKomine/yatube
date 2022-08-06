@@ -286,6 +286,8 @@ class TestFollow(TestCase):
     def setUp(self):
         self.auth_user = Client()
         self.auth_user.force_login(self.user1)
+        self.author = Client()
+        self.author.force_login(self.user)
         cache.clear()
 
     def test_following(self):
@@ -295,6 +297,15 @@ class TestFollow(TestCase):
             reverse('posts:profile_follow', args=[self.user.username]))
         self.assertIsNotNone(Follow.objects.filter(
             author=self.user, user=self.user1))
+
+    def test_self_following(self):
+        """Подписка на самого себя"""
+        count_author_following = Follow.objects.filter(
+            author=self.user).count()
+        self.author.get(
+            reverse('posts:profile_follow', args=[self.user.username]))
+        self.assertFalse(Follow.objects.filter(
+            author=self.user).exists())
 
     def test_unfollowing(self):
         """Авторизованный пользователь может удалять из подписок."""
