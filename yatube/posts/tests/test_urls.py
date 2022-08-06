@@ -91,7 +91,7 @@ class TestTemplates(TestCase):
     def test_for_guest(self):
         """Тестируем шаблоны гостевых url"""
         profile_temp = 'posts/profile.html'
-        template_urls = {#'/': '/posts/index.html',
+        template_urls = {'/': '/posts/index.html',
                          f'/group/{self.group.slug}/': 'posts/group_list.html',
                          f'/profile/{self.user.username}/': profile_temp,
                          f'/posts/{self.post.id}/': 'posts/post_detail.html'}
