@@ -3,8 +3,8 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.core.files import File
 from django.core.cache import cache
+from django.conf import settings
 
-from posts.utils import COUNT_POST
 from posts.forms import PostForm
 from posts.models import Post, Group, Follow
 
@@ -95,7 +95,7 @@ class TestPagination(TestCase):
             with self.subTest(template=template):
                 self.assertEqual(
                     len(response.context['page_obj']
-                        .paginator.page(1)), COUNT_POST)
+                        .paginator.page(1)), settings.COUNT_POST)
 
     def test_2_page(self):
         """2-я страница пагинации"""
@@ -261,7 +261,8 @@ class TestCache(TestCase):
             response.context['page_obj'][0].text, post1.text)
         cache.clear()
         response = self.client.get(reverse('posts:index'))
-        self.assertIsNone(Post.objects.last())
+        self.assertNotEqual(Post.objects.filter(
+            text=post1.text), self.post.text)
 
 
 class TestFollow(TestCase):
@@ -302,8 +303,8 @@ class TestFollow(TestCase):
         """Подписка на самого себя"""
         self.author.get(
             reverse('posts:profile_follow', args=[self.user.username]))
-        self.assertFalse(Follow.objects.filter(
-            author=self.user).exists())
+        self.assertFalse(Follow.objects.filter(user=self.user,
+                                               author=self.user).exists())
 
     def test_unfollowing(self):
         """Авторизованный пользователь может удалять из подписок."""
