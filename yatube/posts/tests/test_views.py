@@ -261,8 +261,7 @@ class TestCache(TestCase):
             response.context['page_obj'][0].text, post1.text)
         cache.clear()
         response = self.client.get(reverse('posts:index'))
-        self.assertNotEqual(Post.objects.filter(
-            text=post1.text), self.post.text)
+        self.assertNotContains(response, post1.text)
 
 
 class TestFollow(TestCase):
@@ -296,7 +295,7 @@ class TestFollow(TestCase):
         пользователей """
         self.auth_user.get(
             reverse('posts:profile_follow', args=[self.user.username]))
-        self.assertIsNotNone(Follow.objects.filter(
+        self.assertTrue(Follow.objects.filter(
             author=self.user, user=self.user1))
 
     def test_self_following(self):
