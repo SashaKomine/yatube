@@ -128,6 +128,8 @@ USE_L10N = True
 
 USE_TZ = True
 
+COUNT_POST = 10
+
 LOGIN_URL = 'users:login'
 LOGIN_REDIRECT_URL = 'posts:index'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'

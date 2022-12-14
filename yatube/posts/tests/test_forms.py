@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from posts.models import Post, Group, Comment
 
@@ -9,7 +10,7 @@ FORM_FIELD_COUNT = 3
 
 
 class TestPostCreateForm(TestCase):
-    """Форма для создания задачи."""
+    """Форма для создания поста."""
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -23,6 +24,19 @@ class TestPostCreateForm(TestCase):
             author=cls.user,
             group=cls.group
         )
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x01\x00'
+            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
+            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
+            b'\x00\x00\x01\x00\x01\x00\x00\x02'
+            b'\x02\x4c\x01\x00\x3b'
+        )
+
+        cls.uploaded_pic = SimpleUploadedFile(
+            name='small_gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
 
     def setUp(self):
         self.user = User.objects.create(username='test_user')
@@ -30,11 +44,12 @@ class TestPostCreateForm(TestCase):
         self.auth_user.force_login(self.user)
 
     def test_form_create(self):
-        """Пользователь создал пост"""
+        """Пользователь создал пост с картинкой"""
         post_count = Post.objects.count()
         form_data = {
             'text': 'test text1',
-            'group': self.group.id}
+            'group': self.group.id,
+            'image': self.uploaded_pic}
         self.auth_user.post(
             reverse('posts:post_create'),
             data=form_data,
@@ -44,6 +59,7 @@ class TestPostCreateForm(TestCase):
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.author.username, self.user.username)
+        self.assertEqual(post.image, self.post.image)
 
     def test_guest_post(self):
         """ Пост при отсутсвии авторизации """
@@ -75,16 +91,6 @@ class TestPostCreateForm(TestCase):
             follow=True)
         self.assertEqual(post_count, Post.objects.count())
 
-    def test_image_in_form(self):
-        """Создается пост с изображением"""
-        form_data = {
-            'text': 'text_test',
-            'image': ' '}
-        self.auth_user.post(('posts:post_create'),
-                            data=form_data,
-                            follow=True)
-        self.assertIsNotNone(Post.objects.last().image)
-
 
 class TestCommentPost(TestCase):
     """Тестированеи формы комментария"""
@@ -114,7 +120,8 @@ class TestCommentPost(TestCase):
                             kwargs={'post_id': self.post.id}),
                             data=form_data,
                             follow=True)
-        self.assertIsNotNone(Comment.objects.last())
+        comment = Comment.objects.last()
+        self.assertEqual(comment.text, Comment.objects.last().text)
 
     def test_comment_guest(self):
         """комментарий от гостя не создался"""

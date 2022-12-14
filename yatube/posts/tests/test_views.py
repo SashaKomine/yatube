@@ -3,8 +3,8 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.core.files import File
 from django.core.cache import cache
+from django.conf import settings
 
-from posts.utils import COUNT_POST
 from posts.forms import PostForm
 from posts.models import Post, Group, Follow
 
@@ -95,7 +95,7 @@ class TestPagination(TestCase):
             with self.subTest(template=template):
                 self.assertEqual(
                     len(response.context['page_obj']
-                        .paginator.page(1)), COUNT_POST)
+                        .paginator.page(1)), settings.COUNT_POST)
 
     def test_2_page(self):
         """2-я страница пагинации"""
@@ -261,7 +261,7 @@ class TestCache(TestCase):
             response.context['page_obj'][0].text, post1.text)
         cache.clear()
         response = self.client.get(reverse('posts:index'))
-        self.assertIsNone(Post.objects.last())
+        self.assertNotContains(response, post1.text)
 
 
 class TestFollow(TestCase):
@@ -286,6 +286,8 @@ class TestFollow(TestCase):
     def setUp(self):
         self.auth_user = Client()
         self.auth_user.force_login(self.user1)
+        self.author = Client()
+        self.author.force_login(self.user)
         cache.clear()
 
     def test_following(self):
@@ -293,15 +295,23 @@ class TestFollow(TestCase):
         пользователей """
         self.auth_user.get(
             reverse('posts:profile_follow', args=[self.user.username]))
-        self.assertIsNotNone(Follow.objects.filter(author=self.user,user=self.user1))
+        self.assertTrue(Follow.objects.filter(
+            author=self.user, user=self.user1))
+
+    def test_self_following(self):
+        """Подписка на самого себя"""
+        self.author.get(
+            reverse('posts:profile_follow', args=[self.user.username]))
+        self.assertFalse(Follow.objects.filter(user=self.user,
+                                               author=self.user).exists())
 
     def test_unfollowing(self):
         """Авторизованный пользователь может удалять из подписок."""
-        follow_count = Follow.objects.count()
         Follow.objects.create(user=self.user1, author=self.user)
         self.auth_user.get(
             reverse('posts:profile_unfollow', args=[self.user.username]))
-        self.assertEqual(Follow.objects.count(), follow_count)
+        self.assertFalse(Follow.objects.filter(
+            author=self.user, user=self.user1).exists())
 
     def test_follow_list(self):
         """Новая запись пользователя появляется в ленте тех,

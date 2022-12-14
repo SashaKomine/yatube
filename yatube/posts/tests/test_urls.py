@@ -2,6 +2,7 @@ from http import HTTPStatus
 
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 
 from posts.models import Post, Group
 
@@ -28,6 +29,7 @@ class TestPostURL(TestCase):
         self.authorized_client.force_login(self.user)
         self.author = Client()
         self.author.force_login(TestPostURL.user)
+        cache.clear()
 
     def test_for_guest_status(self):
         """Тестируем гостевые url Post"""
@@ -87,11 +89,12 @@ class TestTemplates(TestCase):
         self.authorized_client.force_login(self.user)
         self.author = Client()
         self.author.force_login(TestTemplates.user)
+        cache.clear()
 
     def test_for_guest(self):
         """Тестируем шаблоны гостевых url"""
         profile_temp = 'posts/profile.html'
-        template_urls = {#'/': '/posts/index.html',
+        template_urls = {'//': 'posts/index.html',
                          f'/group/{self.group.slug}/': 'posts/group_list.html',
                          f'/profile/{self.user.username}/': profile_temp,
                          f'/posts/{self.post.id}/': 'posts/post_detail.html'}
